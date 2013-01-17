@@ -113,13 +113,6 @@ var TabRegistry = (function(undefined){
 		write();
 	}
 	
-	function updateFingerprint(guid) {
-		chrome.tabs.sendMessage(registry.current[guid].tabId, function(fingerprint){
-			registry.current[guid].fingerprint = fingerprint;
-			write();
-		});
-	}
-	
 	// Update tab index in registry for tab matching <guid>
 	function updateTabIndex(guid) {
 		chrome.tabs.get(registry.current[guid].tabId, function(tab){
