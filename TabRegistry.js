@@ -232,7 +232,28 @@ var TabRegistry = (function(undefined){
 	
 	// Public members
 	return {
-		
+		reset: function() {
+			registry = {
+				current: [],
+				prev: [],
+				removed: []
+			}
+			write();
+		},
+		guid: function(tabId) {
+			var guids = query({tabId: tabId}),
+			count = guids.length;
+
+			if (count > 1) throw {
+				name: "TabRegistry Error",
+				message: "There are " + count + " tabs in the registry with tab ID " + tabId + ". There should only be one, so something went wrong."
+			}
+
+			return (count) ? guids[0] : null;
+		},
+		id: function(guid) {
+			return registry.current[guid].tabId;
+		}
 	}
 })();
 

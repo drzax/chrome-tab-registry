@@ -12,6 +12,17 @@ The problem and a proposed solution are well explained on Stack Overflow: [Persi
 Usage
 -----
 
+### Setup
+1. Add all library files to your extension's code base.
+2. Make sure your manifest file requests the `tabs` and `storage` permissions.
+3. Add `ContentScript.js` as a [content script](http://developer.chrome.com/stable/extensions/content_scripts.html) with permission to run on all URLs.
+4. Add `TabRegistry.js` as a (persistent) [background script](http://developer.chrome.com/stable/extensions/background_pages.html).
+
+### API
+There are only two methods to the`TabRegistry` API you can use in your code. 
+
+1. `TabRegistry.reset()` - Calling this will remove all pages from the registry. Any new or refreshed pages will then be re-added.
+2. `TabRegistry.guid(Int tabId)` - Calling this will return a GUID which uniquely and consistently identifies the given tab.
 
 Known Limitations
 -----------------
