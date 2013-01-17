@@ -74,6 +74,7 @@ var TabRegistry = (function(undefined){
 		if (log) console.info('New tab opened.', JSON.parse(JSON.stringify(data)));
 		registry.current[GUID()] = {tabId: data.tabId, tabIndex: data.tabIndex, fingerprint: data.fingerprint};
 		write();
+		updateTabIndexesAbove(data.tabIndex);
 	}
 	
 	// Query the registry and return an array of guids matching criteria.
@@ -122,14 +123,27 @@ var TabRegistry = (function(undefined){
 	// Update tab index in registry for tab matching <guid>
 	function updateTabIndex(guid) {
 		chrome.tabs.get(registry.current[guid].tabId, function(tab){
+			if (log) console.info("Tab index updated.", JSON.parse(JSON.stringify(tab)));
 			registry.current[guid].tabIndex = tab.index;
 			write();
 		});
 	}
 	
+	// Update tab indexes above a given index
+	function updateTabIndexesAbove(index) {
+		var k;
+		if (log) console.info('Updating tabs with index above ' + index);
+		for (k in registry.current) {
+			if (registry.current[k].tabIndex > index) {
+				updateTabIndex(k);
+			}
+		}
+	}
+	
 	// Update all tab indexes in registry.
 	function updateTabIndexes() {
 		var guid;
+		if (log) console.info('Updating all tab indexes.');
 		for (guid in registry.current) {
 			updateTabIndex(guid)
 		}
@@ -138,7 +152,6 @@ var TabRegistry = (function(undefined){
 	chrome.tabs.onMoved.addListener(updateTabIndexes);
 	chrome.tabs.onDetached.addListener(updateTabIndexes);
 	chrome.tabs.onAttached.addListener(updateTabIndexes);
-	
 	
 	chrome.tabs.onReplaced.addListener(function(addedId, removedId){
 		var guids = query({tabId: removedId}),
@@ -154,8 +167,7 @@ var TabRegistry = (function(undefined){
 	
 	chrome.tabs.onRemoved.addListener(function(tabId, info) {
 		var guids = query({tabId:tabId}),
-			count = guids.length,
-			k;
+			count = guids.length;
 			
 		if (count > 1) throw {
 			name: "TabRegistry Removal Error",
@@ -171,11 +183,7 @@ var TabRegistry = (function(undefined){
 			write();
 			
 			// Update tab indexes.
-			for (k in registry.current) {
-				if (registry.current[k].index > registry.removed[guids[0]].index) {
-					updateTabIndex(k);
-				}
-			}
+			updateTabIndexesAbove(registry.removed[guids[0]].tabIndex);
 		}
 	});
 	
