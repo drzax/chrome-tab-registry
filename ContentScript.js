@@ -5,10 +5,19 @@
 
 (function(){
 	
+	function getFingerprint() {
+		return JSON.stringify([location.href, document.referrer, history.length]);
+	}
+	
+	function sendFingerprint() {
+		chrome.extension.sendMessage(getFingerprint(), function(response) {});
+	}
+	
 	chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
-		if (request === 'fingerprint') sendResponse(JSON.stringify([location.href, document.referrer, history.length]));
+		if (request === 'fingerprint') return sendResponse(getFingerprint());
+		if (request === 'ping') return sendFingerprint();
 	});
 
-	chrome.extension.sendMessage('register', function(response) {});
+	sendFingerprint();
 })()
 
