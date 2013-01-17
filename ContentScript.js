@@ -4,6 +4,6 @@
  */
 
 (function(){
-	chrome.extension.sendMessage(JSON.stringify([location.href, document.referrer, history.length]), function(response) {});
+	chrome.extension.sendMessage({event: 'register', data: {fingerprint: JSON.stringify([location.href, document.referrer, history.length])}});
 })()
 

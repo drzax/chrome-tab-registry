@@ -180,43 +180,48 @@ var TabRegistry = (function(undefined){
 		}
 	});
 	
-	chrome.extension.onMessage.addListener(function(fingerprint, sender) {
+	chrome.extension.onMessage.addListener(function(message, sender) {
 		
-		var guids, count, data;
+		var guids, count, data, fingerprint;
 		
-		// Sometimes tabs are weird (I think this is instant search).
-		if (sender.tab.id === -1) {
-			if (log) console.info('Tab with negative ID: ', JSON.parse(JSON.stringify(sender.tab)));
-			return;
-		}
-
-		// Either update fingerprint or register.
-		guids = query({tabId: sender.tab.id});
-		count = guids.length;
+		if (message.event === 'register') {
+			
+			fingerprint = message.data.fingerprint;
 		
-		if (count > 1) throw {
-			name: "TabRegistry Message Error",
-			message: "There are " + count + " tabs in the registry with tab ID " + sender.tab.id + ". There should only be one."
-		}
-		
-		if ( count ) { 
-			
-			registry.current[guids[0]].fingerprint = fingerprint;
-			if (log) console.info('Tab fingerprint updated.', JSON.parse(JSON.stringify(registry.current[guids[0]])));
-			write();
-			
-		} else {
-			
-			data = {tabId: sender.tab.id, tabIndex: sender.tab.index, fingerprint: fingerprint};
-			
-			// In case a tab requests registration before registry is retrieved from storage.
-			if (registry.prev === null) { 
-				toRegister.push(data);
-				if (log) console.info('Early registration.');
-			} else {
-				add(data);
+			// Sometimes tabs are weird (I think this is instant search).
+			if (sender.tab.id === -1) {
+				if (log) console.info('Tab with negative ID: ', JSON.parse(JSON.stringify(sender.tab)));
+				return;
 			}
-			
+
+			// Either update fingerprint or register.
+			guids = query({tabId: sender.tab.id});
+			count = guids.length;
+
+			if (count > 1) throw {
+				name: "TabRegistry Message Error",
+				message: "There are " + count + " tabs in the registry with tab ID " + sender.tab.id + ". There should only be one."
+			}
+
+			if ( count ) { 
+
+				registry.current[guids[0]].fingerprint = fingerprint;
+				if (log) console.info('Tab fingerprint updated.', JSON.parse(JSON.stringify(registry.current[guids[0]])));
+				write();
+
+			} else {
+
+				data = {tabId: sender.tab.id, tabIndex: sender.tab.index, fingerprint: fingerprint};
+
+				// In case a tab requests registration before registry is retrieved from storage.
+				if (registry.prev === null) { 
+					toRegister.push(data);
+					if (log) console.info('Early registration.');
+				} else {
+					add(data);
+				}
+
+			}
 		}
 	});
 	
