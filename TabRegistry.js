@@ -3,18 +3,18 @@
  * even through browser restarts and tab close/reopen and is unique when a tab is duplicated.
  * 
  * Registry objects structure:
- *	{
- *		<guid>: {
- *			tabId: <int>,
- *			tabIndex: <int>,
- *			fingerprint: <string>
- *		}
- *	}
+ * {
+ *   <guid>: {
+ *     tabId: <int>,
+ *     tabIndex: <int>,
+ *     fingerprint: <string>
+ *   }
+ * }
  *	
- *	There are three registrys:
- *	- current	// Records tabs which are currently open and is continually written to storage.
- *	- prev		// Records tabs from the previous browser session.
- *	- removed	// Records tabs which have been closed in the current session.
+ * There are three registrys:
+ * - current	// Records tabs which are currently open and is continually written to storage.
+ * - prev		// Records tabs from the previous browser session.
+ * - removed	// Records tabs which have been closed in the current session.
  * 
  */
 var TabRegistry = (function(undefined){
@@ -106,6 +106,7 @@ var TabRegistry = (function(undefined){
 		return (S4() + S4() + "-" +	S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 	}
 	
+	// Update the tabId for tab matching <guid>
 	function updateTabId(guid, newTabId) {
 		registry.current[guid].tabId = newTabId;
 		write();
@@ -118,6 +119,7 @@ var TabRegistry = (function(undefined){
 		});
 	}
 	
+	// Update tab index in registry for tab matching <guid>
 	function updateTabIndex(guid) {
 		chrome.tabs.get(registry.current[guid].tabId, function(tab){
 			registry.current[guid].tabIndex = tab.index;
