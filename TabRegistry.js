@@ -20,7 +20,7 @@
 var TabRegistry = (function(undefined){
 	
 	// Private properties
-	var log = true,
+	var log = false,
 		registry = {
 			current: {},		// A look up table of current registered tabs
 			removed: {},		// A look up table of tabs closed in the current session.
@@ -49,7 +49,7 @@ var TabRegistry = (function(undefined){
 			guids = query({tabIndex: data.tabIndex, fingerprint: data.fingerprint}, r);
 			count = guids.length;
 
-			// Warn if there are more than one matching tab in removed registry
+			// Warn if there are more than one matching tab in registry
 			if (count > 1) {
 				matches = [];
 				for (k in guids) {
