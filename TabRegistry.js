@@ -61,7 +61,7 @@ var TabRegistry = (function(undefined){
 			// Restore tab in registry.
 			if (count) { 
 				if (log) console.info("Matching tab found in registry '" + r + "'.", JSON.parse(JSON.stringify(data)));
-				registry.current[guids[0]] = {tabId: data.tabId, tabIndex: data.tabIndex, fingerprint: data.fingerprint};
+				registry.current[guids[0]] = {tabId: data.tabId, tabIndex: data.tabIndex, fingerprint: data.fingerprint, attrs: registry[r][guids[0]].attrs||{}};
 				for (k in guids) {
 					delete registry[r][k];
 				}			
@@ -72,7 +72,7 @@ var TabRegistry = (function(undefined){
 		
 		// If we got to this this point it's brand new as far as we can tell.
 		if (log) console.info('New tab opened.', JSON.parse(JSON.stringify(data)));
-		registry.current[GUID()] = {tabId: data.tabId, tabIndex: data.tabIndex, fingerprint: data.fingerprint};
+		registry.current[GUID()] = {tabId: data.tabId, tabIndex: data.tabIndex, fingerprint: data.fingerprint, attrs: {}};
 		write();
 		updateTabIndexesAbove(data.tabIndex);
 	}
@@ -259,6 +259,13 @@ var TabRegistry = (function(undefined){
 		},
 		id: function(guid) {
 			return registry.current[guid].tabId;
+		},
+		set: function(guid, name, value) {
+			registry.current[guid].attrs[name] = value;
+			write();
+		},
+		get: function(guid, name) {
+			return registry.current[guid].attrs[name];
 		}
 	}
 })();
