@@ -101,10 +101,11 @@ var TabRegistry = (function(undefined){
 	
 	// From: http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
 	function GUID() {
-		function S4() {
-			return Math.floor(Math.random() * 0x10000).toString(16);
-		}
-		return (S4() + S4() + "-" +	S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+			var r = Math.random()*16|0,
+				v = c == 'x' ? r : r&0x3|0x8;
+			return v.toString(16);
+		});
 	}
 	
 	// Update the tabId for tab matching <guid>
