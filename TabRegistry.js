@@ -60,7 +60,7 @@ var TabRegistry = (function(undefined){
 
 			// Restore tab in registry.
 			if (count) { 
-				if (log) console.info("Matching tab found in registry '" + r + "'.", JSON.parse(JSON.stringify(data)));
+				if (log) console.info("Matching tab found in registry '" + r + "'.", JSON.parse(JSON.stringify(data)), JSON.parse(JSON.stringify(registry[r][guids[0]])));
 				registry.current[guids[0]] = {tabId: data.tabId, tabIndex: data.tabIndex, fingerprint: data.fingerprint, attrs: registry[r][guids[0]].attrs||{}};
 				for (k in guids) {
 					delete registry[r][k];
