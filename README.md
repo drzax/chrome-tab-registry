@@ -19,18 +19,33 @@ Usage
 4. Add `TabRegistry.js` as a (persistent) [background script](http://developer.chrome.com/stable/extensions/background_pages.html).
 
 ### API
-There are only two methods to the`TabRegistry` API you can use in your code. 
 
-1. `TabRegistry.reset()` - Calling this will remove all pages from the registry. Any new or refreshed pages will then be re-added.
-2. `TabRegistry.guid(Int tabId)` - Calling this will return a GUID which uniquely and consistently identifies the given tab.
+#### `TabRegistry.reset()`
+Remove all pages from the registry. Any new or refreshed pages will then be re-added.
+
+#### `TabRegistry.guid(Int tabId)`
+Return a GUID which uniquely and consistently identifies the tab with the passed `tabId`.
+
+#### `TabRegistry.id(String guid)`
+Return the Chrome tab ID for the tab identified by the passed guid.
+
+#### `TabRegistry.set(String guid, String name, Any value)`
+Store an arbitrary value against this tab in the registry. 
+
+#### `TabRegistry.get(String guid, String name)`
+Retrieve a value stored in the registry for this tab. 
+
+### Examples
+This library was written for the [This Tab Will Self Destruct extension for Chrome™](https://github.com/drzax/chrome-temporary-tabs), so you can see an example of usage there.
+
 
 Known Limitations
 -----------------
-- Page load must get the the point where `ContentScript.js` is executed for tab to be recorded in the registry.
+- Page load must get to the point where `ContentScript.js` is executed for a tab to be recorded in the registry.
 - Pages that can't have content scripts can't be registered (things like `chrome://` and `https://secure.google.com/` pages).
 - There are also some [bugs](https://github.com/drzax/chrome-tab-registry/issues) which are due to limitations of the Extensions API. (If you have a solution to any of these bugs, please do contribute.)
 
 License
 -------
 [The MIT License (MIT)](http://drzax.mit-license.org/)
-Copyright © 2013 Simon Elvery <simon@elvery.net>
+Copyright © 2013 [Simon Elvery](http://elvery.net) <simon@elvery.net>
