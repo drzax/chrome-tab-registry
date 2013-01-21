@@ -14,9 +14,9 @@ Usage
 
 ### Setup
 1. Add all library files to your extension's code base.
-2. Make sure your manifest file requests the `tabs` and `storage` permissions.
-3. Add `ContentScript.js` as a [content script](http://developer.chrome.com/stable/extensions/content_scripts.html) with permission to run on all URLs.
-4. Add `TabRegistry.js` as a (persistent) [background script](http://developer.chrome.com/stable/extensions/background_pages.html).
+2. Request the `tabs` and `storage` permissions in your manifest file.
+3. Make sure your extension has [cross-origin permissions](http://developer.chrome.com/extensions/content_scripts.html#pi) for all sites you want the registry to track.
+4. Add `TabRegistry.js` as a (persistent) [background script](http://developer.chrome.com/stable/extensions/background_pages.html) (before any of your own scripts that will use it).
 
 ### API
 
@@ -41,8 +41,8 @@ This library was written for the [This Tab Will Self Destruct extension for Chro
 
 Known Limitations
 -----------------
-- Page load must get to the point where `ContentScript.js` is executed for a tab to be recorded in the registry.
-- Pages that can't have content scripts can't be registered (things like `chrome://` and `https://secure.google.com/` pages).
+- Pages are not registered until the `chrome.tabs.onChanged` event fires on a tab with a status of `complete`.
+- Chrome internal tabs (except `chrome://newtab/`) and some other special cases like (things like `https://secure.google.com/` pages) won't be in the registry.
 - There are also some [bugs](https://github.com/drzax/chrome-tab-registry/issues) which are due to limitations of the Extensions API. (If you have a solution to any of these bugs, please do contribute.)
 
 License

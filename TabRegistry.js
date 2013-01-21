@@ -7,7 +7,10 @@
  *   <guid>: {
  *     tabId: <int>,
  *     tabIndex: <int>,
- *     fingerprint: <string>
+ *     fingerprint: <string>,
+ *     attrs: {
+ *       <string>: <object>
+ *     }
  *   }
  * }
  *	
@@ -35,33 +38,33 @@ var TabRegistry = (function(undefined){
 	}
 	
 	// Add a tab to the registry.
-	function add(data) {
+	function add(tabId, tabIndex, fingerprint) {
 
 		var guids, count, matches, k, r;
 		
 		// Sometimes tabs are weird (I think this is instant search or omnibox funny business).
-		if (data.tabIndex === -1) {
+		if (tabIndex === -1) {
 			if (log) console.info('Tab with negative index: ', JSON.parse(JSON.stringify(data)));
 			return;
 		}
-
 		for (r in {removed:'', prev:''}) {
-			guids = query({tabIndex: data.tabIndex, fingerprint: data.fingerprint}, r);
+			
+			guids = query({tabIndex: tabIndex, fingerprint: fingerprint}, r);
 			count = guids.length;
-
+			
 			// Warn if there are more than one matching tab in registry
 			if (count > 1) {
 				matches = [];
 				for (k in guids) {
 					matches.push(registry[r][k]);
 				}
-				console.warn("More than one tab is a match for the tab being added. The first will be used.", JSON.parse(JSON.stringify({criteria: data, matches: matches, registry: r})));
+				console.warn("More than one tab is a match for the tab being added. The first will be used.", JSON.parse(JSON.stringify({tabId: tabId, tabIndex: tabIndex, fingerprint: fingerprint, matches: matches, registry: r})));
 			}
 
 			// Restore tab in registry.
 			if (count) { 
-				if (log) console.info("Matching tab found in registry '" + r + "'.", JSON.parse(JSON.stringify(data)), JSON.parse(JSON.stringify(registry[r][guids[0]])));
-				registry.current[guids[0]] = {tabId: data.tabId, tabIndex: data.tabIndex, fingerprint: data.fingerprint, attrs: registry[r][guids[0]].attrs||{}};
+				if (log) console.info("Matching tab found in registry '" + r + "'.", tabId, tabIndex, fingerprint, JSON.parse(JSON.stringify(registry[r][guids[0]])));
+				registry.current[guids[0]] = {tabId: tabId, tabIndex: tabIndex, fingerprint: fingerprint, attrs: registry[r][guids[0]].attrs||{}};
 				for (k in guids) {
 					delete registry[r][k];
 				}			
@@ -71,10 +74,10 @@ var TabRegistry = (function(undefined){
 		}
 		
 		// If we got to this this point it's brand new as far as we can tell.
-		if (log) console.info('New tab opened.', JSON.parse(JSON.stringify(data)));
-		registry.current[GUID()] = {tabId: data.tabId, tabIndex: data.tabIndex, fingerprint: data.fingerprint, attrs: {}};
+		if (log) console.info('New tab opened.', tabId, tabIndex, fingerprint);
+		registry.current[GUID()] = {tabId: tabId, tabIndex: tabIndex, fingerprint: fingerprint, attrs: {}};
 		write();
-		updateTabIndexesAbove(data.tabIndex);
+		updateTabIndexesAbove(tabIndex);
 	}
 	
 	// Query the registry and return an array of guids matching criteria.
@@ -143,25 +146,93 @@ var TabRegistry = (function(undefined){
 		}
 	}
 	
+	// Either update fingerprint or register.
+	function addOrUpdateFingerprint(tabId, tabIndex, fingerprint) {
+		
+		var guids, count;
+		
+		guids = query({tabId: tabId});
+		count = guids.length;
+
+		if (count > 1) throw {
+			name: "TabRegistry Message Error",
+			message: "There are " + count + " tabs in the registry with tab ID " + tabId + ". There should only be one."
+		}
+
+		if ( count ) { 
+			registry.current[guids[0]].fingerprint = fingerprint;
+			if (log) console.info('Tab fingerprint updated.', JSON.parse(JSON.stringify(registry.current[guids[0]])));
+			write();
+
+		} else {
+			// In case a tab requests registration before registry is retrieved from storage.
+			if (registry.prev === null) { 
+				toRegister.push({tabId: tabId, tabIndex: tabIndex, fingerprint: fingerprint});
+				if (log) console.info('Early registration.');
+			} else {
+				add(tabId, tabIndex, fingerprint);
+			}
+		}
+	}
+	
+	chrome.tabs.onUpdated.addListener(function(tabId, info, tab){
+		
+		// Completely ignore incomplete tabs to avoid many complication.
+		if (tab.status !== 'complete') return;
+		
+		if (log) console.info('Tab updated', JSON.parse(JSON.stringify(tab)));
+		
+		// Internal Chrome business
+		if (/^chrome/.test(tab.url)) {
+			
+			// New tabs
+			if (/:\/\/newtab\//.test(tab.url)) {
+				addOrUpdateFingerprint(tabId, tab.index, tab.url);
+			} else {
+				// Ignore the rest
+				if (log) console.info('Chrome internal tab ignored', tab.url);
+			}
+			
+			return;
+		}
+		
+		// Get real fingerprint and add or update
+		chrome.tabs.executeScript(tabId, {
+			code: "(function(){return JSON.stringify([location.href, document.referrer, history.length]);})()"
+		}, function(fingerprint){
+			addOrUpdateFingerprint(tabId, tab.index, fingerprint[0]);
+		});
+		
+	});
+	
 	chrome.tabs.onMoved.addListener(updateTabIndexes);
 	chrome.tabs.onDetached.addListener(updateTabIndexes);
 	chrome.tabs.onAttached.addListener(updateTabIndexes);
 	
-	chrome.tabs.onReplaced.addListener(function(addedId, removedId){
-		var guids = query({tabId: removedId}),
-			count = guids.length;
+	if (chrome.tabs.onReplaced) { // Not in stable yet
+		chrome.tabs.onReplaced.addListener(function(addedId, removedId){
+			var guids = query({tabId: removedId}),
+				count = guids.length;
+				
+			if (count > 1) throw {
+				name: "TabRegistry Replacement Error",
+				message: "There are " + count + " tabs in the registry with tab ID " + removedId + ". There should only be one."
+			}
 			
-		if (count > 1) throw {
-			name: "TabRegistry Replacement Error",
-			message: "There are " + count + " tabs in the registry with tab ID " + removedId + ". There should only be one."
-		}
-		
-		if (count) updateTabId(guids[0], addedId);
-	});
+			if (log) console.info('Tab replacement', removedId, addedId, guids);
+
+			if (count) updateTabId(guids[0], addedId);
+		});
+	}
 	
 	chrome.tabs.onRemoved.addListener(function(tabId, info) {
-		var guids = query({tabId:tabId}),
-			count = guids.length;
+		var guids, count;
+		
+		// Not perfect, but this will catch when the browser is closing.
+		if (info.isWindowClosing) return;
+			
+		guids = query({tabId:tabId});
+		count = guids.length;
 			
 		if (count > 1) throw {
 			name: "TabRegistry Removal Error",
@@ -181,58 +252,13 @@ var TabRegistry = (function(undefined){
 		}
 	});
 	
-	chrome.extension.onMessage.addListener(function(message, sender) {
-		
-		var guids, count, data, fingerprint;
-		
-		if (message.event === 'register') {
-			
-			fingerprint = message.data.fingerprint;
-		
-			// Sometimes tabs are weird (I think this is instant search).
-			if (sender.tab.id === -1) {
-				if (log) console.info('Tab with negative ID: ', JSON.parse(JSON.stringify(sender.tab)));
-				return;
-			}
-
-			// Either update fingerprint or register.
-			guids = query({tabId: sender.tab.id});
-			count = guids.length;
-
-			if (count > 1) throw {
-				name: "TabRegistry Message Error",
-				message: "There are " + count + " tabs in the registry with tab ID " + sender.tab.id + ". There should only be one."
-			}
-
-			if ( count ) { 
-
-				registry.current[guids[0]].fingerprint = fingerprint;
-				if (log) console.info('Tab fingerprint updated.', JSON.parse(JSON.stringify(registry.current[guids[0]])));
-				write();
-
-			} else {
-
-				data = {tabId: sender.tab.id, tabIndex: sender.tab.index, fingerprint: fingerprint};
-
-				// In case a tab requests registration before registry is retrieved from storage.
-				if (registry.prev === null) { 
-					toRegister.push(data);
-					if (log) console.info('Early registration.');
-				} else {
-					add(data);
-				}
-
-			}
-		}
-	});
-	
 	// Initialise
-	chrome.storage.local.get({TabRegistry: {}}, function(items){
+	chrome.storage.local.get("TabRegistry", function(items){
 		var i;
-		registry.prev = items.TabRegistry;
+		registry.prev = items.TabRegistry || {};
 		if (log) console.info('Previous sessions\'s registry retrieved from storage. ', JSON.parse(JSON.stringify(registry.prev)));
 		for (i=toRegister.length-1;i>=0;i--) {
-			add(toRegister[i]);
+			add(toRegister[i].tabId, toRegister[i].tabIndex, toRegister[i].fingerprint);
 		}
 	});
 	
@@ -265,7 +291,7 @@ var TabRegistry = (function(undefined){
 			write();
 		},
 		get: function(guid, name) {
-			return registry.current[guid].attrs[name];
+			return (registry.current[guid]) ? ((registry.current[guid].attrs) ? registry.current[guid].attrs[name] : null) : null;
 		}
 	}
 })();
