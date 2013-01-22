@@ -42,7 +42,7 @@ This library was written for the [This Tab Will Self Destruct extension for Chro
 Known Limitations
 -----------------
 - Pages are not registered until the `chrome.tabs.onChanged` event fires on a tab with a status of `complete`.
-- Chrome internal tabs (except `chrome://newtab/`) and some other special cases like (things like `https://secure.google.com/` pages) won't be in the registry.
+- Chrome internal tabs and some other special cases (things like `https://secure.google.com/`) won't be in the registry (except `chrome://newtab/` - that guy will self destruct).
 - There are also some [bugs](https://github.com/drzax/chrome-tab-registry/issues) which are due to limitations of the Extensions API. (If you have a solution to any of these bugs, please do contribute.)
 
 License
