@@ -299,6 +299,7 @@ var TabRegistry = (function(undefined){
 			return registry.current[guid].tabId;
 		},
 		set: function(guid, name, value) {
+			registry.current[guid].attrs = registry.current[guid].attrs || {};
 			registry.current[guid].attrs[name] = value;
 			write();
 		},
