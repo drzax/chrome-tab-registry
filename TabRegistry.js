@@ -175,7 +175,7 @@ var TabRegistry = (function(undefined){
 		}
 	}
 	
-	chrome.tabs.onUpdated.addListener(function(tabId, info, tab){
+	function onUpdatedOrLoad(tabId, info, tab){
 		
 		// Completely ignore incomplete tabs to avoid many complication.
 		if (tab.status !== 'complete') return;
@@ -201,31 +201,24 @@ var TabRegistry = (function(undefined){
 			code: "(function(){return JSON.stringify([location.href, document.referrer, history.length]);})()"
 		}, function(fingerprint){
 			addOrUpdateFingerprint(tabId, tab.index, fingerprint[0]);
-		});
-		
-	});
-	
-	chrome.tabs.onMoved.addListener(updateTabIndexes);
-	chrome.tabs.onDetached.addListener(updateTabIndexes);
-	chrome.tabs.onAttached.addListener(updateTabIndexes);
-	
-	if (chrome.tabs.onReplaced) { // Not in stable yet
-		chrome.tabs.onReplaced.addListener(function(addedId, removedId){
-			var guids = query({tabId: removedId}),
-				count = guids.length;
-				
-			if (count > 1) throw {
-				name: "TabRegistry Replacement Error",
-				message: "There are " + count + " tabs in the registry with tab ID " + removedId + ". There should only be one."
-			}
-			
-			if (log) console.info('Tab replacement', removedId, addedId, guids);
-
-			if (count) updateTabId(guids[0], addedId);
-		});
+		});	
 	}
 	
-	chrome.tabs.onRemoved.addListener(function(tabId, info) {
+	function onReplaced(addedId, removedId){
+		var guids = query({tabId: removedId}),
+			count = guids.length;
+
+		if (count > 1) throw {
+			name: "TabRegistry Replacement Error",
+			message: "There are " + count + " tabs in the registry with tab ID " + removedId + ". There should only be one."
+		}
+
+		if (log) console.info('Tab replacement', removedId, addedId, guids);
+
+		if (count) updateTabId(guids[0], addedId);
+	}
+	
+	function onRemoved(tabId, info) {
 		var guids, count;
 		
 		// Not perfect, but this will catch when the browser is closing.
@@ -250,7 +243,18 @@ var TabRegistry = (function(undefined){
 			// Update tab indexes.
 			updateTabIndexesAbove(registry.removed[guids[0]].tabIndex);
 		}
-	});
+	}
+	
+	
+	// Add the listeners
+	chrome.tabs.onUpdated.addListener(onUpdatedOrLoad);
+	chrome.tabs.onMoved.addListener(updateTabIndexes);
+	chrome.tabs.onDetached.addListener(updateTabIndexes);
+	chrome.tabs.onAttached.addListener(updateTabIndexes);
+	chrome.tabs.onRemoved.addListener(onRemoved);
+	if (chrome.tabs.onReplaced) chrome.tabs.onReplaced.addListener(onReplaced); // Not in stable yet
+	
+	
 	
 	// Initialise
 	chrome.storage.local.get("TabRegistry", function(items){
@@ -259,6 +263,14 @@ var TabRegistry = (function(undefined){
 		if (log) console.info('Previous sessions\'s registry retrieved from storage. ', JSON.parse(JSON.stringify(registry.prev)));
 		for (i=toRegister.length-1;i>=0;i--) {
 			add(toRegister[i].tabId, toRegister[i].tabIndex, toRegister[i].fingerprint);
+		}
+	});
+	
+	// Run once to register on first load.
+	chrome.tabs.query({}, function(tabs){
+		var k;
+		for (k in tabs) {
+			onUpdatedOrLoad(tabs[k].id, {}, tabs[k]);
 		}
 	});
 	
