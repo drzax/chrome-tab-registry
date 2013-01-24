@@ -245,8 +245,14 @@ var TabRegistry = (function(undefined){
 		}
 	}
 	
+	function onCreated(tab) {
+		onUpdatedOrLoad(tab.id, {}, tab);
+	}
+	
 	
 	// Add the listeners
+	
+	chrome.tabs.onCreated.addListener(onCreated);
 	chrome.tabs.onUpdated.addListener(onUpdatedOrLoad);
 	chrome.tabs.onMoved.addListener(updateTabIndexes);
 	chrome.tabs.onDetached.addListener(updateTabIndexes);
