@@ -298,13 +298,35 @@ var TabRegistry = (function(undefined){
 				name: "TabRegistry Error",
 				message: "There are " + count + " tabs in the registry with tab ID " + tabId + ". There should only be one, so something went wrong."
 			}
+			
+			if (count < 1) throw {
+				name: "TabRegistry Error",
+				message: "There is no tab with ID " + tabId + " in the registry."
+			}
 
-			return (count) ? guids[0] : null;
+			return guids[0];
 		},
 		id: function(guid) {
+			
+			if ( !(guid in registry.current) ) {
+				throw {
+					name: "TabRegistry Error",
+					message: "There is no tab with the GUID " + guid + " in the registry."
+				}
+			}
+			
 			return registry.current[guid].tabId;
 		},
 		set: function(guid, name, value) {
+			
+			if ( !(guid in registry.current) ) {
+				throw {
+					name: "TabRegistry Error",
+					message: "Cannot set attribute " + name + " for non-existant tab with GUID " + guid + ".",
+					data: value
+				}
+			}
+			
 			registry.current[guid].attrs = registry.current[guid].attrs || {};
 			registry.current[guid].attrs[name] = value;
 			write();
