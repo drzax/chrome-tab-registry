@@ -333,6 +333,9 @@ var TabRegistry = (function(undefined){
 		},
 		get: function(guid, name) {
 			return (registry.current[guid]) ? ((registry.current[guid].attrs) ? registry.current[guid].attrs[name] : null) : null;
+		},
+		registry: function () {
+			return registry;
 		}
 	}
 })();
