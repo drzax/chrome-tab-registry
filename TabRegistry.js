@@ -59,7 +59,9 @@ var TabRegistry = (function(undefined){
 			if (log) console.info('Tab with negative index: ', JSON.parse(JSON.stringify(data)));
 			return;
 		}
-		for (r in {removed:'', prev:''}) {
+		for (r in registry) {
+			
+			if (r === 'current') continue;
 			
 			guids = query({tabIndex: tabIndex, fingerprint: fingerprint}, r);
 			count = guids.length;
@@ -77,9 +79,7 @@ var TabRegistry = (function(undefined){
 			if (count) { 
 				if (log) console.info("Matching tab found in registry '" + r + "'.", tabId, tabIndex, fingerprint, JSON.parse(JSON.stringify(registry[r][guids[0]])));
 				registry.current[guids[0]] = {tabId: tabId, tabIndex: tabIndex, fingerprint: fingerprint, attrs: registry[r][guids[0]].attrs||{}};
-				for (k in guids) {
-					delete registry[r][k];
-				}			
+				delete registry[r][guids[0]];
 				write();
 				return;
 			}	
