@@ -189,30 +189,19 @@ var TabRegistry = (function(undefined){
 	
 	function onUpdatedOrLoad(tabId, info, tab){
 		
-		// Completely ignore incomplete tabs to avoid many complication.
-		if (tab.status !== 'complete') return;
-		
 		if (log) console.info('Tab updated', JSON.parse(JSON.stringify(tab)));
 		
 		// Internal Chrome business
 		if (/^chrome/.test(tab.url)) {
-			
-			// New tabs
-			if (/:\/\/newtab\//.test(tab.url)) {
-				addOrUpdateFingerprint(tabId, tab.index, tab.url);
-			} else {
-				// Ignore the rest
-				if (log) console.info('Chrome internal tab ignored', tab.url);
-			}
-			
+			addOrUpdateFingerprint(tabId, tab.index, tab.url.hashCode());
 			return;
 		}
 		
 		// Get real fingerprint and add or update
 		chrome.tabs.executeScript(tabId, {
 			code: "(function(){return JSON.stringify([location.href, document.referrer, history.length]);})()"
-		}, function(fingerprint){
-			addOrUpdateFingerprint(tabId, tab.index, fingerprint[0]);
+		}, function(data){
+			addOrUpdateFingerprint(tabId, tab.index, data[0].hashCode());
 		});	
 	}
 	
