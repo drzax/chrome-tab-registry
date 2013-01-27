@@ -220,30 +220,33 @@ var TabRegistry = (function(undefined){
 	}
 	
 	function onRemoved(tabId, info) {
-		var guids, count;
 		
-		// Not perfect, but this will catch when the browser is closing.
-		if (info.isWindowClosing) return;
-			
-		guids = query({tabId:tabId});
-		count = guids.length;
-			
-		if (count > 1) throw {
-			name: "TabRegistry Removal Error",
-			message: "There are " + count + " tabs in the registry with tab ID " + tabId + ". There should only be one."
-		}
+		// Timeout before removing from registry prevents registry being cleared
+		// on browser quit.
+		setTimeout(function(){
+			var guids, count;
+
+			guids = query({tabId:tabId});
+			count = guids.length;
+
+			if (count > 1) throw {
+				name: "TabRegistry Removal Error",
+				message: "There are " + count + " tabs in the registry with tab ID " + tabId + ". There should only be one."
+			}
+
+			if (count) {
+
+				// Move to registry of closed tabs.
+				registry.removed[guids[0]] = registry.current[guids[0]];
+				delete registry.current[guids[0]];
+				if (log) console.info('Tab removed from registry.', JSON.parse(JSON.stringify(registry.removed)));
+				write();
+
+				// Update tab indexes.
+				return registry.removed[guids[0]].tabIndex;
+			}
+		}, 100);
 		
-		if (count) {
-			
-			// Move to registry of closed tabs.
-			registry.removed[guids[0]] = registry.current[guids[0]];
-			delete registry.current[guids[0]];
-			if (log) console.info('Tab removed from registry.', JSON.parse(JSON.stringify(registry.removed)));
-			write();
-			
-			// Update tab indexes.
-			updateTabIndexesAbove(registry.removed[guids[0]].tabIndex);
-		}
 	}
 	
 	function onCreated(tab) {
