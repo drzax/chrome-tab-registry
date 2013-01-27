@@ -253,7 +253,6 @@ var TabRegistry = (function(undefined){
 		onUpdatedOrLoad(tab.id, {}, tab);
 	}
 	
-	
 	// Add the listeners
 	
 	chrome.tabs.onCreated.addListener(onCreated);
@@ -321,25 +320,46 @@ var TabRegistry = (function(undefined){
 			
 			return registry.current[guid].tabId;
 		},
-		set: function(guid, name, value) {
-			
-			if ( !(guid in registry.current) ) {
-				throw {
-					name: "TabRegistry Error",
-					message: "Cannot set attribute " + name + " for non-existant tab with GUID " + guid + ".",
-					data: value
-				}
-			}
-			
-			registry.current[guid].attrs = registry.current[guid].attrs || {};
-			registry.current[guid].attrs[name] = value;
-			write();
-		},
-		get: function(guid, name) {
-			return (registry.current[guid]) ? ((registry.current[guid].attrs) ? registry.current[guid].attrs[name] : null) : null;
-		},
 		registry: function () {
 			return registry;
+		},
+		attrs : {
+			set: function(guid, name, value) {
+
+				if ( !(guid in registry.current) ) {
+					throw {
+						name: "TabRegistry Error",
+						message: "Cannot set attribute " + name + " for non-existant tab with GUID " + guid + ".",
+						data: value
+					}
+				}
+
+				registry.current[guid].attrs = registry.current[guid].attrs || {};
+				registry.current[guid].attrs[name] = value;
+				write();
+			},
+			get: function(guid, name) {
+
+				if ( !(guid in registry.current) ) {
+					throw {
+						name: "TabRegistry Error",
+						message: "Cannot get attribute " + name + " for non-existant tab with GUID " + guid + "."
+					}
+				}
+
+				return registry.current[guid].attrs[name];
+			},
+			clear: function(guid, name) {
+
+				if ( !(guid in registry.current) ) {
+					throw {
+						name: "TabRegistry Error",
+						message: "Cannot clear attribute " + name + " for non-existant tab with GUID " + guid + "."
+					}
+				}
+
+				delete registry.current[guid].attrs[name];
+			}	
 		}
 	}
 })();
