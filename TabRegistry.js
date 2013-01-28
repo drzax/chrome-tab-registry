@@ -28,7 +28,11 @@ var TabRegistry = (function(undefined){
 			current: {},		// A look up table of current registered tabs
 			removed: {},		// A look up table of tabs closed in the current session.
 			prev: null			// A look up table of tab from the previous session not yet registered this session.
-		},		
+		},
+		listeners = {
+			onAdded: [],
+			onRemoved: []
+		},
 		toRegister = [];		// Temporary store of tab which are created before registry has been retrieved.
 	
 	// Write the tab registry to persistent storage.
@@ -37,10 +41,21 @@ var TabRegistry = (function(undefined){
 		if (log) console.info('Registry written to storage.', JSON.parse(JSON.stringify(registry.current)));
 	}
 	
+	function executeListeners(event) {
+		var i, args = Array.prototype.slice.call(arguments, 1);
+		if (event in listeners && listeners[event].length > 0) {
+			for (i in listeners[event]) {
+				
+				console.info('Listener executed for ' + event + ' event.', args);
+				listeners[event][i].apply(this, args);
+			}
+		}
+	}
+	
 	// Add a tab to the registry.
 	function add(tabId, tabIndex, fingerprint) {
 
-		var guids, count, matches, k, r;
+		var guid, guids, count, matches, k, r;
 		
 		// Sometimes tabs are weird (I think this is instant search or omnibox funny business).
 		if (tabIndex === -1) {
@@ -67,6 +82,7 @@ var TabRegistry = (function(undefined){
 			if (count) { 
 				if (log) console.info("Matching tab found in registry '" + r + "'.", tabId, tabIndex, fingerprint, JSON.parse(JSON.stringify(registry[r][guids[0]])));
 				registry.current[guids[0]] = {tabId: tabId, tabIndex: tabIndex, fingerprint: fingerprint, attrs: registry[r][guids[0]].attrs||{}};
+				executeListeners('onAdded', guids[0], tabId)
 				delete registry[r][guids[0]];
 				write();
 				return;
@@ -75,7 +91,9 @@ var TabRegistry = (function(undefined){
 		
 		// If we got to this this point it's brand new as far as we can tell.
 		if (log) console.info('New tab opened.', tabId, tabIndex, fingerprint);
-		registry.current[GUID()] = {tabId: tabId, tabIndex: tabIndex, fingerprint: fingerprint, attrs: {}};
+		guid = GUID();
+		registry.current[guid] = {tabId: tabId, tabIndex: tabIndex, fingerprint: fingerprint, attrs: {}};
+		executeListeners('onAdded', guid, tabId);
 		write();
 		updateTabIndexesAbove(tabIndex);
 	}
@@ -227,6 +245,7 @@ var TabRegistry = (function(undefined){
 				// Move to registry of closed tabs.
 				registry.removed[guids[0]] = registry.current[guids[0]];
 				delete registry.current[guids[0]];
+				executeListeners('onRemoved', guids[0], tabId);
 				if (log) console.info('Tab removed from registry.', JSON.parse(JSON.stringify(registry.removed)));
 				write();
 
@@ -311,6 +330,12 @@ var TabRegistry = (function(undefined){
 		registry: function () {
 			return registry;
 		},
+		onAdded: {addListener: function(fn){
+			listeners['onAdded'].push(fn);
+		}},
+		onRemoved: {addListener: function(fn){
+			listeners['onRemoved'].push(fn);
+		}},
 		attrs : {
 			set: function(guid, name, value) {
 
