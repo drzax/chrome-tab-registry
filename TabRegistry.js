@@ -46,7 +46,7 @@ var TabRegistry = (function(undefined){
 		if (event in listeners && listeners[event].length > 0) {
 			for (i in listeners[event]) {
 				
-				console.info('Listener executed for ' + event + ' event.', args);
+				if (log) console.info('Listener executed for ' + event + ' event.', args);
 				listeners[event][i].apply(this, args);
 			}
 		}
