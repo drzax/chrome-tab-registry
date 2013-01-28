@@ -336,7 +336,7 @@ var TabRegistry = (function(undefined){
 		onRemoved: {addListener: function(fn){
 			listeners['onRemoved'].push(fn);
 		}},
-		attrs : {
+		attr : {
 			set: function(guid, name, value) {
 
 				if ( !(guid in registry.current) ) {
