@@ -278,7 +278,7 @@ var TabRegistry = (function(undefined){
 		registry.prev = items.TabRegistry || {};
 		if (log) console.info('Previous sessions\'s registry retrieved from storage. ', JSON.parse(JSON.stringify(registry.prev)));
 		for (i=toRegister.length-1;i>=0;i--) {
-			add(toRegister[i].tabId, toRegister[i].tabIndex, toRegister[i].fingerprint);
+			addOrUpdateFingerprint(toRegister[i].tabId, toRegister[i].tabIndex, toRegister[i].fingerprint);
 		}
 	});
 	
