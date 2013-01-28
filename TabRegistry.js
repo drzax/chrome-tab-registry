@@ -16,7 +16,7 @@
  *	
  * There are three registrys:
  * - current	// Records tabs which are currently open and is continually written to storage.
- * - prev		// Records tabs from the previous browser session.
+ * - previous		// Records tabs from the previous browser session.
  * - removed	// Records tabs which have been closed in the current session.
  * 
  */
@@ -27,7 +27,7 @@ var TabRegistry = (function(undefined){
 		registry = {
 			current: {},		// A look up table of current registered tabs
 			removed: {},		// A look up table of tabs closed in the current session.
-			prev: null			// A look up table of tab from the previous session not yet registered this session.
+			previous: null			// A look up table of tab from the previous session not yet registered this session.
 		},
 		listeners = {
 			onAdded: [],
@@ -184,7 +184,7 @@ var TabRegistry = (function(undefined){
 
 		} else {
 			// In case a tab requests registration before registry is retrieved from storage.
-			if (registry.prev === null) { 
+			if (registry.previous === null) { 
 				toRegister.push({tabId: tabId, tabIndex: tabIndex, fingerprint: fingerprint});
 				if (log) console.info('Early registration.');
 			} else {
@@ -275,8 +275,8 @@ var TabRegistry = (function(undefined){
 	// Initialise
 	chrome.storage.local.get("TabRegistry", function(items){
 		var i;
-		registry.prev = items.TabRegistry || {};
-		if (log) console.info('Previous sessions\'s registry retrieved from storage. ', JSON.parse(JSON.stringify(registry.prev)));
+		registry.previous = items.TabRegistry || {};
+		if (log) console.info('Previous sessions\'s registry retrieved from storage. ', JSON.parse(JSON.stringify(registry.previous)));
 		for (i=toRegister.length-1;i>=0;i--) {
 			addOrUpdateFingerprint(toRegister[i].tabId, toRegister[i].tabIndex, toRegister[i].fingerprint);
 		}
@@ -295,7 +295,7 @@ var TabRegistry = (function(undefined){
 		reset: function() {
 			registry = {
 				current: [],
-				prev: [],
+				previous: [],
 				removed: []
 			}
 			write();
