@@ -197,17 +197,17 @@ var TabRegistry = (function(undefined){
 		
 		if (log) console.info('Tab updated', JSON.parse(JSON.stringify(tab)));
 		
-		// Internal Chrome business
-		if (/^chrome/.test(tab.url)) {
-			addOrUpdateFingerprint(tabId, tab.index, tab.url.hashCode());
-			return;
-		}
-		
 		// Get real fingerprint and add or update
 		chrome.tabs.executeScript(tabId, {
 			code: "(function(){return JSON.stringify([location.href, document.referrer, history.length]);})()"
 		}, function(data){
-			addOrUpdateFingerprint(tabId, tab.index, data[0].hashCode());
+			// This will throw an error to the console, but chrome API won't let us catch it.
+			if (chrome.extension.lastError === undefined) {
+				addOrUpdateFingerprint(tabId, tab.index, data[0].hashCode());
+			} else {
+				addOrUpdateFingerprint(tabId, tab.index, tab.url.hashCode());
+			}
+			
 		});	
 	}
 	
