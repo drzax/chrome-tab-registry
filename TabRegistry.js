@@ -22,18 +22,6 @@
  */
 var TabRegistry = (function(undefined){
 	
-	// From: http://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
-	String.prototype.hashCode = function(){
-		var hash = 0, i, ch;
-		if (this.length == 0) return hash;
-		for (i = 0; i < this.length; i++) {
-			ch = this.charCodeAt(i);
-			hash = ((hash<<5)-hash)+ch;
-			hash = hash & hash; // Convert to 32bit integer
-		}
-		return hash.toString(16);
-	};
-	
 	// Private properties
 	var log = false,
 		registry = {
@@ -364,3 +352,14 @@ var TabRegistry = (function(undefined){
 	}
 })();
 
+// From: http://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
+String.prototype.hashCode = function(){
+	var hash = 0, i, ch;
+	if (this.length == 0) return hash;
+	for (i = 0; i < this.length; i++) {
+		ch = this.charCodeAt(i);
+		hash = ((hash<<5)-hash)+ch;
+		hash = hash & hash; // Convert to 32bit integer
+	}
+	return hash.toString(16);
+};
