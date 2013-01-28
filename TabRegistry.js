@@ -16,7 +16,7 @@
  *	
  * There are three registrys:
  * - current	// Records tabs which are currently open and is continually written to storage.
- * - previous		// Records tabs from the previous browser session.
+ * - previous	// Records tabs from the previous browser session.
  * - removed	// Records tabs which have been closed in the current session.
  * 
  */
